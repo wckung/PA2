@@ -1,0 +1,20 @@
+# Solution: A1, A2, B2
+
+# rows
+4
+
+# cols
+4
+
+# delay before first flow
+5
+
+# map
+WWWW
+W.<W
+W..>
+WWWW
+
+# optional: list of pipes to start with
+# TR: Top-Right, TL: Top-Left, BL: Bottom-Left, BR: Bottom-Right, CR: Cross
+BR, TR, HZ
