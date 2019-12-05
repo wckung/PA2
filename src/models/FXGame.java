@@ -270,9 +270,57 @@ public class FXGame {
     		if (map.canReplacePipe(new Coordinate(row, col))) {
     			// show dialog and get new pipe
     			// need to pause timer
+    			flowTimer.pauseTimer();
+    			
+    			List<String> choices = new ArrayList<>();
+    			choices.add("Top Left");
+    			choices.add("Top Right");
+    			choices.add("Bottom Left");
+    			choices.add("Bottom Right");
+    			choices.add("Horizontal");
+    			choices.add("Vertical");
+    			choices.add("Cross");
 
-    			boolean isConfirmed = true;
+    			ChoiceDialog<String> dialog = new ChoiceDialog<>("Top Left", choices);
+    			dialog.setTitle("Choice Dialog");
+    			dialog.setHeaderText("Choose pipe");
+    			dialog.setContentText("Choose pipe type:");
+
+    			// Traditional way to get the response value.
+    			Optional<String> result = dialog.showAndWait();
+    			boolean isConfirmed = false;
+    			if (result.isPresent()){
+    			    System.out.println("Your choice: " + result.get());
+    			    isConfirmed = true;
+    			}    			
+    			
     			Pipe new_pipe = new Pipe(Shape.CROSS);
+    			switch (result.get()) {
+    			case "Top Left":
+    				new_pipe = new Pipe(Shape.TOP_LEFT);
+    				break;
+    			case "Top Right":
+    				new_pipe = new Pipe(Shape.TOP_RIGHT);
+    				break;
+    			case "Bottom Left":
+    				new_pipe = new Pipe(Shape.BOTTOM_LEFT);
+    				break;
+    			case "Bottom Right":
+    				new_pipe = new Pipe(Shape.BOTTOM_RIGHT);
+    				break;
+    			case "Horizontal":
+    				new_pipe = new Pipe(Shape.HORIZONTAL);
+    				break;
+    			case "Vertical":
+    				new_pipe = new Pipe(Shape.VERTICAL);
+    				break;
+    			case "Cross":
+    				new_pipe = new Pipe(Shape.CROSS);
+    				break;
+    			}
+    			
+    			// resume timer here 
+    			flowTimer.resumeTimer();
     			
     			if (isConfirmed) {
     				map.replacePipe(new Coordinate(row, col), new_pipe);
