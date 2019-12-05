@@ -41,7 +41,8 @@ public class SettingsPane extends GamePane {
     private final Button returnButton = new BigButton("Return");
     @NotNull
     private final Button toggleSoundButton = new BigButton("Sound FX: Enabled");
-
+    @NotNull
+    private final Button toggleGameModeButton = new BigButton("Counting Down: Disabled");
     
     /**
      * Text field for modifying the number of rows for generated maps.
@@ -110,6 +111,7 @@ public class SettingsPane extends GamePane {
     	leftContainer.getChildren().add(delayBox);
     	leftContainer.getChildren().add(flowBox);
     	leftContainer.getChildren().add(toggleSoundButton);
+    	leftContainer.getChildren().add(toggleGameModeButton);
     	
     	this.setCenter(infoText);
     }
@@ -125,6 +127,7 @@ public class SettingsPane extends GamePane {
         // TODO
     	infoText.setWrapText(true);
     	toggleSoundButton.setText(AudioManager.getInstance().isEnabled() ? "Sound FX : Enabled" : "Sound FX : Disabled");
+    	toggleGameModeButton.setText(AudioManager.getInstance().isCountingDown() ? "Counting Down: Enabled" : "Counting Down: Disabled");
     }
 
     /**
@@ -174,6 +177,10 @@ public class SettingsPane extends GamePane {
     		toggleSoundButton.setText(AudioManager.getInstance().isEnabled() ? "Sound FX : Enabled" : "Sound FX : Disabled");
     	});
     	
+    	toggleGameModeButton.setOnAction(e -> {
+    		AudioManager.getInstance().setCountingDown(!AudioManager.getInstance().isCountingDown());
+    		toggleGameModeButton.setText(AudioManager.getInstance().isCountingDown() ? "Counting Down: Enabled" : "Counting Down: Disabled");
+    	});
     }
 
     /**
