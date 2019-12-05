@@ -152,6 +152,7 @@ public class GameplayPane extends GamePane {
     	game.placePipe(sel_row, sel_col);
     	game.renderMap(gameplayCanvas);
     	game.renderQueue(queueCanvas);
+    	AudioManager.getInstance().playSound(SoundRes.MOVE);
     	
     	if (game.hasWon()) {
     		game.fillAllPipes();
