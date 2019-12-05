@@ -70,7 +70,10 @@ public class FillableCell extends Cell implements MapElement {
     @Override
     public Renderer.CellImage getImageRep() {
         // TODO
-        return null;
+    	if (pipe != null) {
+    		return pipe.getImageRep();
+    	}
+        return new Renderer.CellImage(IMAGE, 0);
     }
 
     @NotNull

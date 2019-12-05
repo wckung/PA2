@@ -157,7 +157,41 @@ public class Pipe implements MapElement {
          */
         @NotNull Renderer.CellImage getCellImage(boolean isFilled) {
             // TODO
-            return null;
+        	Image ref = null;
+        	int angle = 0;        	
+        	
+        	if (isFilled) {
+        		if (this.rep == "HZ" || this.rep == "VT") {
+        			ref = STRAIGHT_FILLED;
+        		} else if (this.rep == "TL" || this.rep == "TR" || this.rep == "BL" || this.rep == "BR") {
+        			ref = CORNER_FILLED;
+        		} else if (this.rep == "CR") {
+        			ref = CROSS_FILLED;
+        		}
+        	} else {
+        		if (this.rep == "HZ" || this.rep == "VT") {
+        			ref = STRAIGHT_UNFILLED;
+        		} else if (this.rep == "TL" || this.rep == "TR" || this.rep == "BL" || this.rep == "BR") {
+        			ref = CORNER_UNFILLED;
+        		} else if (this.rep == "CR") {
+        			ref = CROSS_UNFILLED;
+        		}
+        	}
+        	
+        	if (this.rep == "VT" || this.rep == "CR" || this.rep == "TL") {
+        		angle = 0;
+        	} else if (this.rep == "HZ") {
+        		angle = 90;
+        	} else if (this.rep == "TR") {
+        		angle = 90;
+        	} else if (this.rep == "BL") {
+        		angle = 270;
+        	} else if (this.rep == "BR") {
+        		angle = 180;
+        	}
+        	
+        	Renderer.CellImage cell_image = new Renderer.CellImage(ref, angle);
+            return cell_image;
         }
     }
 }

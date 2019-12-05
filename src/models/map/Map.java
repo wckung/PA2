@@ -136,6 +136,16 @@ public class Map {
 
         return new Map(rows, cols, cells);
     }
+    
+    public boolean canReplacePipe(@NotNull final Coordinate coord) {
+    	if (cells[coord.row][coord.col] instanceof FillableCell) {
+    		FillableCell clicked_cell = (FillableCell) cells[coord.row][coord.col];
+    		if (clicked_cell.getPipe().isPresent() && !clicked_cell.getPipe().get().getFilled()) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
 
     /**
      * Tries to place a pipe at (row, col).
@@ -181,8 +191,13 @@ public class Map {
             return false;
         }
 
+        System.out.println("r = " + row + " , col = " + col + " , " + p.toSerializedRep());
         cells[row][col] = new FillableCell(new Coordinate(row, col), p);
         return true;
+    }
+    
+    public void replacePipe(Coordinate coord, Pipe p) {
+    	cells[coord.row][coord.col] = new FillableCell(coord, p);
     }
 
     @NotNull
@@ -320,7 +335,9 @@ public class Map {
      *
      * @param canvas Canvas to render to.
      */
-    public void render(@NotNull Canvas canvas) {
+    public void render(@NotNull Canvas canvas) {    	
+    	canvas.setWidth(32 * cols);
+    	canvas.setHeight(32 * rows);
         Platform.runLater(() -> Renderer.renderMap(canvas, cells));
     }
 
@@ -363,7 +380,7 @@ public class Map {
      */
     public void fillTiles(int distance) {
         if (prevFilledDistance == null) {
-            prevFilledDistance = 0;
+            prevFilledDistance = -1;
         }
 
         while (prevFilledDistance != distance) {
@@ -371,6 +388,7 @@ public class Map {
             prevFilledTiles = 0;
 
             if (currentDistance == 0) {
+            	fillBeginTile();
                 filledTiles.add(sourceCell.coord);
                 prevFilledTiles = 1;
             } else if (currentDistance == 1) {
@@ -431,6 +449,7 @@ public class Map {
 
             prevFilledDistance = currentDistance;
         }
+        System.out.println(" " + prevFilledTiles);
     }
 
     /**
@@ -438,6 +457,10 @@ public class Map {
      */
     public void fillAll() {
         // TODO
+    	do {
+    		fillTiles(prevFilledDistance == null ? 0 : prevFilledDistance + 1);
+    	} while (prevFilledTiles != 0);
+    	sinkCell.setFilled();
     }
 
     /**
@@ -486,6 +509,46 @@ public class Map {
 
         return false;
     }
+    
+    public boolean checkReachable() {
+    	// BFS woohoo!
+        var coordsTraversed = new ArrayList<Coordinate>();
+
+        Queue<Coordinate> coordsToCheck = new LinkedList<>();
+        coordsToCheck.add(sourceCell.coord);
+
+        while (!coordsToCheck.isEmpty()) {
+            var thisCoord = coordsToCheck.remove();
+            if (coordsTraversed.stream().anyMatch(it -> it.equals(thisCoord))) {
+                continue;
+            }
+            
+            if (thisCoord.row < 0 || thisCoord.row > rows - 1 || thisCoord.col < 0 || thisCoord.col > cols - 1) {
+            	continue;
+            }
+
+            var thisCell = cells[thisCoord.row][thisCoord.col];
+            if (thisCell instanceof TerminationCell) {
+                var thisTermCell = (TerminationCell) thisCell;
+                if (thisTermCell.type == TerminationCell.Type.SINK) {
+                    return true;
+                } else {
+                    coordsToCheck.add(thisTermCell.coord.add(thisTermCell.pointingTo.getOffset()));
+                }
+            }
+
+            if (thisCell instanceof FillableCell) {
+            	coordsToCheck.add(thisCoord.add(new Coordinate(0, -1)));
+            	coordsToCheck.add(thisCoord.add(new Coordinate(0, 1)));
+            	coordsToCheck.add(thisCoord.add(new Coordinate(-1, 0)));
+            	coordsToCheck.add(thisCoord.add(new Coordinate(1, 0)));
+            }
+
+            coordsTraversed.add(thisCoord);
+        }
+
+        return false;
+    }
 
     /**
      * <p>
@@ -495,7 +558,7 @@ public class Map {
      *
      * @return {@code true} if the game is lost.
      */
-    public boolean hasLost() {
+    public boolean hasLost() {    	
         return prevFilledTiles == 0;
     }
 }

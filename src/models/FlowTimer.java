@@ -5,6 +5,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -45,6 +46,10 @@ public class FlowTimer {
     private final List<Runnable> onFlowCallbacks = new ArrayList<>();
 
     private int ticksElapsed;
+    
+    private boolean isPlaying = true;
+    
+    private boolean isFlowing = false;
 
     /**
      * Sets the default delay of all {@link FlowTimer}.
@@ -100,6 +105,10 @@ public class FlowTimer {
      */
     FlowTimer(int initialValue) {
         // TODO
+    	if (initialValue != 0) {
+    		defaultDelay = initialValue;
+    	}
+    		
     }
 
     /**
@@ -119,6 +128,18 @@ public class FlowTimer {
     void registerTickCallback(@NotNull final Runnable cb) {
         onTickCallbacks.add(cb);
     }
+    
+    public void pauseTimer() {
+    	isPlaying = false;
+    }
+    
+    public void resumeTimer() {
+    	isPlaying = true;
+    }
+    
+    public boolean isPaused() {
+    	return !isPlaying;
+    }
 
     /**
      * Starts the timer.
@@ -130,6 +151,48 @@ public class FlowTimer {
      */
     void start() {
         // TODO
+    	flowTimer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				if (!isPlaying) {
+					return;
+				}
+				
+				Iterator<Runnable> it = onTickCallbacks.iterator();
+				while (it.hasNext()) {
+					((Runnable) it.next()).run();
+				}
+				
+				if (ticksElapsed >= defaultDelay && (ticksElapsed - defaultDelay) % defaultFlowDuration == 0) {
+					it = onFlowCallbacks.iterator();
+	    			while (it.hasNext()) {
+	    				((Runnable)it.next()).run();
+	    			}
+				}
+				
+				ticksElapsed += 1;
+			}
+    		
+    	}, 0, 1000);
+    	
+//    	flowTimer.schedule(new TimerTask() {
+//    		
+//    		@Override
+//    		public void run() {
+//    			flowTimer.schedule(new TimerTask() {
+//    	    		
+//    	    		@Override
+//    	    		public void run() {
+//    	    			Iterator<Runnable> it = onFlowCallbacks.iterator();
+//    	    			while (it.hasNext()) {
+//    	    				((Runnable)it.next()).run();
+//    	    			}
+//    	    		}
+//    	    	}, 0, defaultFlowDuration * 1000);
+//    		}
+//    	}, defaultDelay * 1000);
     }
 
     /**
@@ -137,6 +200,7 @@ public class FlowTimer {
      */
     void stop() {
         // TODO
+    	flowTimer.cancel();
     }
 
     /**

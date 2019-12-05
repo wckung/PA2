@@ -62,7 +62,10 @@ public class SceneManager {
     private Stage stage;
 
     private SceneManager() {
-        // TODO: Add CSS styles to every scene
+        // TODO: Add CSS styles to every scene    	
+    	for (Map.Entry<Class<? extends GamePane>, Scene> entry : scenes.entrySet()) {
+    		entry.getValue().getStylesheets().add(this.getClass().getResource("/main/styles.css").toExternalForm());
+    	}
     }
 
     /**
@@ -101,6 +104,7 @@ public class SceneManager {
      */
     public void showPane(@NotNull final Class<? extends GamePane> pane) {
         // TODO
+    	showScene(scenes.get(pane));
     }
 
     /**

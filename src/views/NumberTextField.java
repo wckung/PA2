@@ -47,6 +47,6 @@ public class NumberTextField extends TextField {
      */
     public int getValue() {
         // TODO
-        return 0;
+        return Integer.parseInt(super.getText());
     }
 }

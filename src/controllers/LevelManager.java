@@ -4,11 +4,20 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
+import models.map.cells.Cell;
+import models.map.cells.TerminationCell;
+import util.Coordinate;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,6 +75,8 @@ public class LevelManager {
      */
     public void setMapDirectory(@NotNull Path mapDirectory) {
         // TODO
+    	this.mapDirectory = mapDirectory;
+    	loadLevelNamesFromDisk();
     }
 
     /**
@@ -83,6 +94,21 @@ public class LevelManager {
      */
     private void loadLevelNamesFromDisk() {
         // TODO
+    	levelNames.clear();
+    	
+    	File[] fileList = mapDirectory.toFile().listFiles();
+    	
+    	if (fileList == null) {
+    		return;
+    	}
+    	
+    	for (File f : fileList) {
+    		String fileName = f.getName();
+    		String fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1, fileName.length());
+    		if (fileExtension.equals("map")) {
+    			levelNames.add(fileName.substring(0, fileName.lastIndexOf(".")));
+    		}
+    	}
     }
 
     @NotNull
@@ -96,7 +122,7 @@ public class LevelManager {
     @NotNull
     public Path getCurrentLevelPath() {
         // TODO
-        return null;
+        return mapDirectory;
     }
 
     /**
@@ -107,6 +133,7 @@ public class LevelManager {
      */
     public void setLevel(@Nullable String levelName) {
         // TODO
+    	curLevelNameProperty.set(levelName);
     }
 
     /**
@@ -126,7 +153,13 @@ public class LevelManager {
     @Nullable
     public String getAndSetNextLevel() {
         // TODO
-        return null;
+    	if (levelNames.indexOf(curLevelNameProperty.get()) < levelNames.size() - 1) {
+    		curLevelNameProperty.set(levelNames.get(levelNames.indexOf(curLevelNameProperty.get()) + 1)); 
+    	} else {
+    		curLevelNameProperty.set(levelNames.get(0));
+    	}
+    	
+        return curLevelNameProperty.get();
     }
 
     @NotNull

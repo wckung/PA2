@@ -2,8 +2,11 @@ package views.panes;
 
 import controllers.AudioManager;
 import controllers.SceneManager;
+import javafx.scene.Parent;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
@@ -38,6 +41,8 @@ public class SettingsPane extends GamePane {
     private final Button returnButton = new BigButton("Return");
     @NotNull
     private final Button toggleSoundButton = new BigButton("Sound FX: Enabled");
+
+    
     /**
      * Text field for modifying the number of rows for generated maps.
      *
@@ -95,6 +100,18 @@ public class SettingsPane extends GamePane {
     @Override
     public void connectComponents() {
         // TODO
+    	
+    	this.setLeft(leftContainer);
+    	
+    	leftContainer.getChildren().add(returnButton);
+    	leftContainer.getChildren().add(saveButton);
+    	leftContainer.getChildren().add(rowBox);
+    	leftContainer.getChildren().add(colBox);
+    	leftContainer.getChildren().add(delayBox);
+    	leftContainer.getChildren().add(flowBox);
+    	leftContainer.getChildren().add(toggleSoundButton);
+    	
+    	this.setCenter(infoText);
     }
 
     /**
@@ -106,6 +123,8 @@ public class SettingsPane extends GamePane {
     @Override
     void styleComponents() {
         // TODO
+    	infoText.setWrapText(true);
+    	toggleSoundButton.setText(AudioManager.getInstance().isEnabled() ? "Sound FX : Enabled" : "Sound FX : Disabled");
     }
 
     /**
@@ -114,6 +133,47 @@ public class SettingsPane extends GamePane {
     @Override
     void setCallbacks() {
         // TODO
+    	
+    	saveButton.setOnAction(e -> {
+    		Optional<String> validated = validate();
+    		
+    		if (validated == null) {
+    			returnToMainMenu(true);
+    			return;
+    		}
+    		
+    		Alert alert = new Alert(AlertType.WARNING);
+    		alert.setTitle("Error");
+    		alert.setHeaderText("Validation Failed");
+    		
+    		System.out.println(validated.get());
+    		
+    		if (validated.get() == "rowError") {    			
+    			alert.setContentText("Row number should be at least 2!");
+    		} else if (validated.get() == "colError") {
+    			alert.setContentText("Column number should be at least 2!");
+    		} else if (validated.get() == "delayError") {
+    			alert.setContentText("Delay should be a positive integer!");
+    		} else if (validated.get() == "flowError") {
+    			alert.setContentText("Flow rate should be a positive integer!");
+    		}
+    		
+    		Optional<ButtonType> result = alert.showAndWait();
+    		if (result.get() == ButtonType.OK) {
+    			returnToMainMenu(true);
+    			return;
+    		}
+    	});
+    	
+    	returnButton.setOnAction(e -> {
+    		returnToMainMenu(false);
+    	});
+    	
+    	toggleSoundButton.setOnAction(e -> {
+    		AudioManager.getInstance().setEnabled(!AudioManager.getInstance().isEnabled());
+    		toggleSoundButton.setText(AudioManager.getInstance().isEnabled() ? "Sound FX : Enabled" : "Sound FX : Disabled");
+    	});
+    	
     }
 
     /**
@@ -121,6 +181,10 @@ public class SettingsPane extends GamePane {
      */
     private void fillValues() {
         // TODO
+    	rowsField.setText("" + FXGame.getDefaultRows());
+    	colsField.setText("" + FXGame.getDefaultCols());
+    	delayField.setText("" + FlowTimer.getDefaultDelay());
+    	flowField.setText("" + FlowTimer.getDefaultFlowDuration());
     }
 
     /**
@@ -130,6 +194,16 @@ public class SettingsPane extends GamePane {
      */
     private void returnToMainMenu(final boolean writeback) {
         // TODO
+    	if (writeback) {
+    		FlowTimer.setDefaultDelay(Integer.parseInt(delayField.getText()));
+    		FlowTimer.setDefaultFlowDuration(Integer.parseInt(flowField.getText()));
+    		FXGame.setDefaultRows(Integer.parseInt(rowsField.getText()));
+    		FXGame.setDefaultCols(Integer.parseInt(colsField.getText()));
+    	} else {
+    		fillValues();
+    	}
+    	
+    	SceneManager.getInstance().showPane(MainMenuPane.class);
     }
 
     /**
@@ -149,7 +223,16 @@ public class SettingsPane extends GamePane {
      */
     @NotNull
     private Optional<String> validate() {
-        // TODO
+    	if (Integer.parseInt(rowsField.getText()) < 2) {
+    		return Optional.of("rowError");
+    	} else if (Integer.parseInt(colsField.getText()) < 2) {
+    		return Optional.of("colError");
+    	} else if (Integer.parseInt(delayField.getText()) < 1) {
+    		return Optional.of("delayError");
+    	} else if (Integer.parseInt(flowField.getText()) < 1) {
+    		return Optional.of("flowError");
+    	}
+    	
         return null;
     }
 }

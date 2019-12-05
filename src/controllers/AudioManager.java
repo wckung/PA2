@@ -1,11 +1,11 @@
 package controllers;
 
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaException;
-import javafx.scene.media.MediaPlayer;
-
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
+
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 
 /**
  * Handles audio related events.
@@ -22,6 +22,7 @@ public class AudioManager {
      */
     private final Set<MediaPlayer> soundPool = new HashSet<>();
     private boolean enabled = true;
+    private boolean counting = false;
 
     /**
      * Enumeration of known sound resources.
@@ -49,6 +50,16 @@ public class AudioManager {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
+    
+    public boolean isCountingDown() {
+    	return counting;
+    }
+    
+    public void setCountingDown(boolean counting) {
+    	this.counting = counting;
+    }
+    
+    
 
     /**
      * Plays the sound. If disabled, simply return.
@@ -66,6 +77,11 @@ public class AudioManager {
      */
     private void playFile(final String name) {
         // TODO
+    	if (enabled) {
+//        	Media media = new Media(getClass().getResource("resources/assets/audio/" + name + ".mp3").toExternalForm());
+//        	MediaPlayer player = new MediaPlayer(media);
+//        	player.play();
+    	}
     }
 
     /**

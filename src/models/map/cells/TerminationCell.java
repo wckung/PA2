@@ -78,7 +78,22 @@ public class TerminationCell extends Cell {
     @Override
     public Renderer.CellImage getImageRep() {
         // TODO
-        return null;
+    	float angle = 0;    	
+    	switch (pointingTo) {
+    	case UP:
+    		angle = (type == Type.SOURCE ? 0 : 180);
+    		break;
+    	case RIGHT:
+    		angle = (type == Type.SOURCE ? 90 : 270);
+    		break;
+    	case DOWN:
+    		angle = (type == Type.SOURCE ? 180 : 0);
+    		break;
+    	case LEFT:
+    		angle = (type == Type.SOURCE ? 270 : 90);
+    		break;
+    	}
+        return isFilled ? new Renderer.CellImage(FILLED_IMG, angle) : new Renderer.CellImage(UNFILLED_IMG, angle);
     }
 
     @NotNull

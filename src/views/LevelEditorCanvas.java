@@ -9,19 +9,29 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import models.exceptions.InvalidMapException;
+import models.map.Map;
 import models.map.cells.Cell;
 import models.map.cells.FillableCell;
 import models.map.cells.TerminationCell;
 import models.map.cells.Wall;
+import models.map.cells.TerminationCell.Type;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import util.Coordinate;
 import util.Direction;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Optional;
@@ -59,6 +69,8 @@ public class LevelEditorCanvas extends Canvas {
      */
     public void changeAttributes(int rows, int cols, int delay) {
         resetMap(rows, cols, delay);
+        sourceCell = null;
+        sinkCell = null;
     }
 
     /**
@@ -70,6 +82,22 @@ public class LevelEditorCanvas extends Canvas {
      */
     private void resetMap(int rows, int cols, int delay) {
         // TODO
+    	
+    	gameProp = new GameProperties(rows, cols);
+    	setAmountOfDelay(delay);
+    	this.setWidth(32 * cols);
+    	this.setHeight(32 * rows);
+    	
+    	for (int i = 0; i < rows; ++i) {
+    		for (int j = 0; j < cols; ++j) {
+    			if (i == 0 || j == 0 || i == rows - 1 || j == cols - 1) {
+    				gameProp.cells[i][j] = new Wall(new Coordinate(i, j));
+    			} else {
+    				gameProp.cells[i][j] = new FillableCell(new Coordinate(i, j));
+    			}
+    		}
+    	}
+    	renderCanvas();
     }
 
     /**
@@ -91,6 +119,53 @@ public class LevelEditorCanvas extends Canvas {
      */
     public void setTile(@NotNull CellSelection sel, double x, double y) {
         // TODO
+    	if (sel == null)
+    		return;
+    	
+    	int sel_col = (int) (x / 32);
+    	int sel_row = (int) (y / 32);
+    	
+    	if ("Wall" == sel.toString()) {
+    		gameProp.cells[sel_row][sel_col] = new Wall(new Coordinate(sel_row, sel_col));
+    		if (sourceCell != null && sourceCell.coord.row == sel_row && sourceCell.coord.col == sel_col) {
+    			sourceCell = null;
+    		}
+    		if (sinkCell != null && sinkCell.coord.row == sel_row && sinkCell.coord.col == sel_col) {
+    			sinkCell = null;
+    		}
+    	} else if ("Cell" == sel.toString()) {
+    		gameProp.cells[sel_row][sel_col] = new FillableCell(new Coordinate(sel_row, sel_col));
+    		if (sourceCell != null && sourceCell.coord.row == sel_row && sourceCell.coord.col == sel_col) {
+    			sourceCell = null;
+    		}
+    		if (sinkCell != null && sinkCell.coord.row == sel_row && sinkCell.coord.col == sel_col) {
+    			sinkCell = null;
+    		}
+    	} else if ("Source/Sink" == sel.toString()) {
+    		if (sel_row == 0 && sinkCell == null) {
+    			sinkCell = new TerminationCell(new Coordinate(sel_row, sel_col),
+    					Direction.UP, TerminationCell.Type.SINK);
+    			gameProp.cells[sel_row][sel_col] = sinkCell;
+    		} else if (sel_row == gameProp.rows - 1 && sinkCell == null) {
+    			sinkCell = new TerminationCell(new Coordinate(sel_row, sel_col),
+    					Direction.DOWN, TerminationCell.Type.SINK);
+    			gameProp.cells[sel_row][sel_col] = sinkCell;
+    		} else if (sel_col == 0 && sinkCell == null) {
+    			sinkCell = new TerminationCell(new Coordinate(sel_row, sel_col),
+    					Direction.LEFT, TerminationCell.Type.SINK);
+    			gameProp.cells[sel_row][sel_col] = sinkCell;
+    		} else if (sel_col == gameProp.cols - 1 && sinkCell == null) {
+    			sinkCell = new TerminationCell(new Coordinate(sel_row, sel_col),
+    					Direction.RIGHT, TerminationCell.Type.SINK);
+    			gameProp.cells[sel_row][sel_col] = sinkCell;
+    		}
+    		else if (sourceCell == null) {
+    			sourceCell = new TerminationCell(new Coordinate(sel_row, sel_col), 
+    					Direction.UP, models.map.cells.TerminationCell.Type.SOURCE);    			
+    			gameProp.cells[sel_row][sel_col] = sourceCell;
+    		}    		
+    	}
+    	renderCanvas();
     }
 
     /**
@@ -110,6 +185,31 @@ public class LevelEditorCanvas extends Canvas {
      */
     public void toggleSourceTileRotation() {
         // TODO
+    	if (sourceCell == null)
+    		return;
+    	
+    	switch (sourceCell.pointingTo) {
+		case UP:
+			sourceCell = new TerminationCell(new Coordinate(sourceCell.coord.row, sourceCell.coord.col), 
+					Direction.RIGHT, TerminationCell.Type.SOURCE);
+			break;
+		case RIGHT:
+			sourceCell = new TerminationCell(new Coordinate(sourceCell.coord.row, sourceCell.coord.col), 
+					Direction.DOWN, TerminationCell.Type.SOURCE);
+			break;
+		case DOWN:
+			sourceCell = new TerminationCell(new Coordinate(sourceCell.coord.row, sourceCell.coord.col), 
+					Direction.LEFT, TerminationCell.Type.SOURCE);
+			break;
+		case LEFT:
+			sourceCell = new TerminationCell(new Coordinate(sourceCell.coord.row, sourceCell.coord.col), 
+					Direction.UP, TerminationCell.Type.SOURCE);
+			break;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + sourceCell.pointingTo);
+		}
+    	gameProp.cells[sourceCell.coord.row][sourceCell.coord.col] = sourceCell;
+    	renderCanvas();
     }
 
     /**
@@ -121,6 +221,11 @@ public class LevelEditorCanvas extends Canvas {
      */
     public boolean loadFromFile() {
         // TODO
+    	File file = getTargetLoadFile();
+    	
+    	if (file != null) {
+    		return loadFromFile(file.toPath());
+    	}
         return false;
     }
 
@@ -135,7 +240,13 @@ public class LevelEditorCanvas extends Canvas {
     @Nullable
     private File getTargetLoadFile() {
         // TODO
-        return null;
+    	FileChooser fileChooser = new FileChooser();
+    	FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Map files (*.map)", "*.map");
+        fileChooser.getExtensionFilters().add(extFilter);
+    	
+    	File file = fileChooser.showOpenDialog(this.getScene().getWindow());
+    	
+    	return file;
     }
 
     /**
@@ -149,6 +260,58 @@ public class LevelEditorCanvas extends Canvas {
      */
     private boolean loadFromFile(@NotNull Path path) {
         // TODO
+    	try {
+    		BufferedReader in = new BufferedReader(
+    		           new InputStreamReader(new FileInputStream(path.toFile()), "UTF-8"));
+    		
+    		String str;
+    		int rd_rows = 0;
+    		int rd_cols = 0;
+    		int rd_delay = 0;
+    		while ((str = in.readLine()) != null) {
+                if (str.equals("# rows")) {
+                	rd_rows = Integer.parseInt(in.readLine());
+                	System.out.print("row " + rd_rows);
+                } else if (str.equals("# cols")) {
+                	rd_cols = Integer.parseInt(in.readLine());
+                	System.out.print("col " + rd_cols);
+                } else if (str.equals("# delay before first flow")) {
+                	rd_delay = Integer.parseInt(in.readLine());
+                	System.out.print("delay " + rd_delay);
+                } else if (str.equals("# map")) {
+                	resetMap(rd_rows, rd_cols, rd_delay);
+                	
+                	for (int i = 0; i < rd_rows; ++i) {
+                		str = in.readLine();
+                		for (int j = 0; j < rd_cols; ++j) {
+                			TerminationCell.Type type = null;
+                			if (str.charAt(j) != 'W' && str.charAt(j) != '.') {
+                				if (i == 0 || i == rd_rows -1 || j == 0 || j == rd_cols - 1) {
+                					type = TerminationCell.Type.SINK;
+                				} else {
+                					type = TerminationCell.Type.SOURCE;
+                				}
+                			}
+                			gameProp.cells[i][j] = Cell.fromChar(str.charAt(j), new Coordinate(i, j), type);
+                			if (str.charAt(j) != 'W' && str.charAt(j) != '.') {
+                				if (i == 0 || i == rd_rows -1 || j == 0 || j == rd_cols - 1) {
+                					sinkCell = (@Nullable TerminationCell) gameProp.cells[i][j];
+                				} else {
+                					sourceCell = (@Nullable TerminationCell) gameProp.cells[i][j];
+                				}
+                			}
+                		}
+                	}
+                }
+            }
+            in.close();    
+            
+            renderCanvas();
+            
+            return true;
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
         return false;
     }
 
@@ -157,6 +320,16 @@ public class LevelEditorCanvas extends Canvas {
      */
     public void saveToFile() {
         // TODO
+    	Optional<String> map_valid;
+    	if ((map_valid = checkValidity()) != null) {
+    		System.out.println(map_valid);
+    		return;
+    	}
+    	File file = getTargetSaveDirectory();
+    	
+    	if (file != null) {
+    		exportToFile(file.toPath());
+    	}
     }
 
     /**
@@ -170,7 +343,13 @@ public class LevelEditorCanvas extends Canvas {
     @Nullable
     private File getTargetSaveDirectory() {
         // TODO
-        return null;
+    	FileChooser fileChooser = new FileChooser();
+    	FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Map files (*.map)", "*.map");
+        fileChooser.getExtensionFilters().add(extFilter);
+    	
+    	File file = fileChooser.showSaveDialog(this.getScene().getWindow());
+    	
+    	return file;
     }
 
     /**
@@ -183,6 +362,31 @@ public class LevelEditorCanvas extends Canvas {
      */
     private void exportToFile(@NotNull Path p) {
         // TODO
+    	try {
+    		PrintWriter writer;
+    		writer = new PrintWriter(p.toFile(), StandardCharsets.UTF_8);
+    		
+    		writer.println("# rows");
+    		writer.println(gameProp.rows + "\n");
+    		
+    		writer.println("# cols");
+    		writer.println(gameProp.cols + "\n");
+    		
+    		writer.println("# delay before first flow");
+    		writer.println(gameProp.delay + "\n");
+    		
+    		writer.println("# map");
+    		for (int row = 0; row < gameProp.cells.length; ++row) {
+    			for (int col = 0; col < gameProp.cells[row].length; ++col) {
+    				writer.print(gameProp.cells[row][col].toSerializedRep());
+    			}
+    			writer.println();
+    		}
+    		
+    		writer.close();
+    	} catch(IOException e) {
+    		e.printStackTrace();
+    	}
     }
 
     /**
@@ -202,7 +406,28 @@ public class LevelEditorCanvas extends Canvas {
      */
     private Optional<String> checkValidity() {
         // TODO
-        return null;
+    	
+    	if (sourceCell == null) {
+    		return Optional.of("Source does't exist on the map.");
+    	}
+    	if (sinkCell == null) {
+    		return Optional.of("Sink doesn't exist on the map.");    		
+    	}
+    	if (gameProp.rows < 2) {
+    		return Optional.of("Less than 2 rows");
+    	}
+    	if (gameProp.cols < 2) {
+    		return Optional.of("Less than 2 cols");
+    	}
+    	if (gameProp.delay < 1) {
+    		return Optional.of("Flow delay must be at least 1");
+    	}
+    	
+    	Map temp = new Map(gameProp.rows, gameProp.cols, gameProp.cells);
+    	if (!temp.checkReachable()) {
+    		return Optional.of("Source is blocked by wall");
+    	}
+		return null;    
     }
 
     public int getNumOfRows() {
